@@ -140,6 +140,16 @@ class QuestTracker
 		playedSavedAt = System.currentTimeMillis();
 	}
 
+	/**
+	 * Send every quest's state again on the next check, e.g. after the server URL changes.
+	 * Saved start times are kept, so quests in progress stay timed.
+	 */
+	void resendAll()
+	{
+		lastStates = null;
+		pending.clear();
+	}
+
 	/** Called every game tick while logged in, to accumulate logged-in time. */
 	void onTick(long now)
 	{

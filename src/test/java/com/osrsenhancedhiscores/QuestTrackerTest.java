@@ -118,4 +118,18 @@ public class QuestTrackerTest
 		assertEquals(Long.valueOf(92_000), done.getElapsedMs());
 		assertEquals(Long.valueOf(52_000), done.getPlayedMs());
 	}
+
+	@Test
+	public void resendAllSendsEveryQuestAgainButKeepsStartTimes()
+	{
+		tracker.update(states(NOT_STARTED, NOT_STARTED), NAMES, 10_000);
+		tracker.update(states(NOT_STARTED, IN_PROGRESS), NAMES, 20_000);
+		tracker.drain();
+
+		tracker.resendAll();
+		tracker.update(states(NOT_STARTED, IN_PROGRESS), NAMES, 30_000);
+		List<Submission.QuestProgress> resent = tracker.drain();
+		assertEquals("every quest is sent again", 2, resent.size());
+		assertEquals(Long.valueOf(10_000), resent.stream().filter(q -> q.getId() == DRAGON).findFirst().get().getStartedAt());
+	}
 }

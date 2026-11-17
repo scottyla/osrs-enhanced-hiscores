@@ -69,6 +69,8 @@ public class OsrsEnhancedHiscoresPlugin extends Plugin
 	/** Max loot sources per request, to keep request bodies reasonably small. */
 	private static final int SOURCES_PER_REQUEST = 150;
 	private static final int MAX_PENDING_DROPS = 500;
+	/** Stats (24 skills etc.) change constantly while training; sending them every 2 minutes is plenty for hiscores. */
+	private static final long STATS_INTERVAL_MS = 120_000;
 	/** How often to re-read quest states (about 30 seconds). Also re-read whenever quest points change. */
 	private static final int QUEST_CHECK_TICKS = 50;
 	/** "You have completed 12 elite Treasure Trails." */
@@ -138,6 +140,7 @@ public class OsrsEnhancedHiscoresPlugin extends Plugin
 	private final Map<Integer, Integer> pendingCollectionLog = new HashMap<>();
 	private final Map<Integer, Integer> sentCollectionLog = new HashMap<>();
 	private String lastSentStatsJson;
+	private long lastStatsSentAt;
 	private final Map<Integer, Submission.ItemInfo> itemInfoCache = new HashMap<>();
 
 	@Value
@@ -369,6 +372,8 @@ public class OsrsEnhancedHiscoresPlugin extends Plugin
 			{
 				fullySyncedProfiles.clear();
 				killCountSyncedProfiles.clear();
+				questTracker.resendAll();
+				questCheckRequested = true;
 				dirtyLootKeys.clear();
 				pendingDrops.clear();
 				pendingCollectionLog.clear();
@@ -452,7 +457,11 @@ public class OsrsEnhancedHiscoresPlugin extends Plugin
 
 		Submission main = newSubmission();
 
-		if (settled && config.submitStats())
+		long now = System.currentTimeMillis();
+		// Always on the first flush after login (lastSentStatsJson is reset) or a level-up; otherwise throttled.
+		// Only while logged in: after logout the client's skill values can't be relied on.
+		boolean statsDue = lastSentStatsJson == null || !pendingLevelUps.isEmpty() || now - lastStatsSentAt >= STATS_INTERVAL_MS;
+		if (settled && config.submitStats() && statsDue && client.getGameState() == GameState.LOGGED_IN)
 		{
 			Submission.Stats stats = collectStats();
 			String json = gson.toJson(stats);
@@ -460,6 +469,7 @@ public class OsrsEnhancedHiscoresPlugin extends Plugin
 			{
 				main.setStats(stats);
 				lastSentStatsJson = json;
+				lastStatsSentAt = now;
 			}
 		}
 
