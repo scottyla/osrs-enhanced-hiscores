@@ -63,14 +63,15 @@ public class OsrsEnhancedHiscoresPlugin extends Plugin
 	 */
 	private static final int COLLECTION_LOG_ITEM_DRAW_SCRIPT = 4100;
 
-	private static final int FLUSH_INTERVAL_SECONDS = 30;
+	/** How often collected data is sent. Drops etc. are batched in between, so this bounds requests per player. */
+	private static final int FLUSH_INTERVAL_SECONDS = 120;
 	/** Ticks to wait after login before reading varps, so the server has sent them. */
 	private static final int LOGIN_SETTLE_TICKS = 5;
-	/** Max loot sources per request, to keep request bodies reasonably small. */
-	private static final int SOURCES_PER_REQUEST = 150;
+	/** Max loot sources per request, to keep request bodies well under the server's size limit. */
+	private static final int SOURCES_PER_REQUEST = 100;
 	private static final int MAX_PENDING_DROPS = 500;
-	/** Stats (24 skills etc.) change constantly while training; sending them every 2 minutes is plenty for hiscores. */
-	private static final long STATS_INTERVAL_MS = 120_000;
+	/** Stats (24 skills etc.) change constantly while training; every 5 minutes (or on a level-up) is plenty for hiscores. */
+	private static final long STATS_INTERVAL_MS = 300_000;
 	/** How often to re-read quest states (about 30 seconds). Also re-read whenever quest points change. */
 	private static final int QUEST_CHECK_TICKS = 50;
 	/** "You have completed 12 elite Treasure Trails." */

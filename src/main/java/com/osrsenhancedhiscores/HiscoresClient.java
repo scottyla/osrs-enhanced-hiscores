@@ -35,6 +35,9 @@ class HiscoresClient
 	private static final String TOKEN_HEADER = "X-Hiscores-Token";
 	private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 	private static final int MAX_QUEUED = 50;
+	/** After a failure, wait this long before retrying, doubling each time up to the max. */
+	private static final long MIN_BACKOFF_MS = 60_000;
+	private static final long MAX_BACKOFF_MS = 15 * 60_000;
 
 	private final OkHttpClient okHttpClient;
 	private final Gson gson;
@@ -45,6 +48,9 @@ class HiscoresClient
 	private Call inFlight;
 	/** Incremented on reset so callbacks from cancelled requests are ignored. */
 	private int generation;
+	/** No requests before this time (epoch ms) after a failure or a 429. */
+	private long retryNotBefore;
+	private long backoffMs;
 	/** Problems the player should see once in the log, not every 30 seconds. */
 	private boolean warnedBadUrl;
 	private volatile boolean warnedRejected;
@@ -71,7 +77,7 @@ class HiscoresClient
 	/** Start sending the next queued submission if nothing is in flight. Serializes JSON, so call it off the client thread. */
 	synchronized void pump()
 	{
-		if (inFlight != null || queue.isEmpty())
+		if (inFlight != null || queue.isEmpty() || System.currentTimeMillis() < retryNotBefore)
 		{
 			return;
 		}
@@ -108,6 +114,7 @@ class HiscoresClient
 			public void onFailure(Call call, IOException e)
 			{
 				log.debug("Hiscores submission failed, will retry", e);
+				backOff(gen, 0);
 				finish(gen, false, false);
 			}
 
@@ -119,6 +126,14 @@ class HiscoresClient
 					handleResponse(submission, response);
 					int code = response.code();
 					boolean retry = code == 429 || code >= 500;
+					if (retry)
+					{
+						backOff(gen, retryAfterMs(response));
+					}
+					else
+					{
+						resetBackoff(gen);
+					}
 					finish(gen, !retry, !retry);
 				}
 			}
@@ -173,6 +188,45 @@ class HiscoresClient
 		}
 	}
 
+	/** Server busy or unreachable: pause, honouring Retry-After, doubling the wait each time. */
+	private synchronized void backOff(int gen, long retryAfterMs)
+	{
+		if (gen != generation)
+		{
+			return;
+		}
+		backoffMs = backoffMs == 0 ? MIN_BACKOFF_MS : Math.min(backoffMs * 2, MAX_BACKOFF_MS);
+		long wait = Math.max(backoffMs, Math.min(retryAfterMs, MAX_BACKOFF_MS));
+		retryNotBefore = System.currentTimeMillis() + wait;
+		log.debug("Hiscores server unavailable, retrying in {}s", wait / 1000);
+	}
+
+	private synchronized void resetBackoff(int gen)
+	{
+		if (gen == generation)
+		{
+			backoffMs = 0;
+			retryNotBefore = 0;
+		}
+	}
+
+	static long retryAfterMs(Response response)
+	{
+		String header = response.header("Retry-After");
+		if (header == null)
+		{
+			return 0;
+		}
+		try
+		{
+			return Math.max(0, Long.parseLong(header.trim())) * 1000;
+		}
+		catch (NumberFormatException e)
+		{
+			return 0;
+		}
+	}
+
 	private synchronized void finish(int gen, boolean removeHead, boolean sendNext)
 	{
 		if (gen != generation)
@@ -195,6 +249,8 @@ class HiscoresClient
 	synchronized void reset()
 	{
 		generation++;
+		backoffMs = 0;
+		retryNotBefore = 0;
 		warnedBadUrl = false;
 		warnedRejected = false;
 		queue.clear();
