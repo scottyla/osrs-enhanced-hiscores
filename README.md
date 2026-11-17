@@ -58,3 +58,9 @@ The first time a character submits, the server issues a secret token. The plugin
 Browse the hiscores at **https://osrsenhancedhiscores.com**. To have your data removed, open an issue at https://github.com/scottyla/osrs-enhanced-hiscores/issues with your display name. Turn off **Submit data** first, or your data comes back on your next login.
 
 The server and website are open source: https://github.com/scottyla/osrs-enhanced-hiscores-server
+
+## Legal
+
+Old School RuneScape and RuneScape are trademarks of Jagex Limited. Game content and images © Jagex Limited. All rights reserved. OSRS Enhanced Hiscores is an unofficial fan project, not affiliated with, endorsed by, or sponsored by Jagex or RuneLite.
+
+This project's own source code is BSD 2-Clause licensed (see `LICENSE`); that license does not cover Jagex's content. See `NOTICE`.
