@@ -76,7 +76,7 @@ class HiscoresClient
 			return;
 		}
 
-		HttpUrl base = HttpUrl.parse(config.serverUrl().trim());
+		HttpUrl base = serverUrl(config.serverUrl());
 		if (base == null)
 		{
 			if (!warnedBadUrl)
@@ -123,6 +123,13 @@ class HiscoresClient
 				}
 			}
 		});
+	}
+
+	/** The configured server, or the OSRS Enhanced Hiscores website when the setting is blank. */
+	static HttpUrl serverUrl(String configured)
+	{
+		String url = configured == null ? "" : configured.trim();
+		return HttpUrl.parse(url.isEmpty() ? OsrsEnhancedHiscoresConfig.DEFAULT_SERVER_URL : url);
 	}
 
 	private void handleResponse(Submission submission, Response response)

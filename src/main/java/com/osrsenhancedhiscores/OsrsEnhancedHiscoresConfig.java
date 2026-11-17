@@ -14,7 +14,7 @@ public interface OsrsEnhancedHiscoresConfig extends Config
 	@ConfigItem(
 		keyName = "enableSubmission",
 		name = "Submit data",
-		description = "Send your loot tracker data and account stats to the OSRS Enhanced Hiscores server."
+		description = "Send your loot tracker data and account stats to OSRS Enhanced Hiscores (osrsenhancedhiscores.com)."
 			+ " Normal, Hardcore Worlds, Fresh Start, Leagues and Deadman characters each get their own hiscores.",
 		warning = "This feature submits your IP address to a 3rd-party server not controlled or verified by RuneLite developers",
 		position = 0
@@ -118,7 +118,7 @@ public interface OsrsEnhancedHiscoresConfig extends Config
 	@ConfigItem(
 		keyName = "serverUrl",
 		name = "Server URL",
-		description = "Base URL of the hiscores server",
+		description = "Where to send data. Leave as https://osrsenhancedhiscores.com (or blank) unless you run your own server.",
 		section = advancedSection,
 		position = 11
 	)
