@@ -27,6 +27,8 @@ Nothing is sent until you turn on **Submit data**. After that, the plugin sends:
 | Boss kill counts and personal bests saved by RuneLite's Chat Commands plugin, and clue completion counts | Kill counts & PBs |
 | Collection log items you view in the collection log | Collection log items |
 
+Every field, its source and how often it's sent: [DATA.md](DATA.md).
+
 Like any web request, your IP address reaches the server. Nothing else is collected: no chat messages (the plugin only reads its own clue completion count from them), no location, no bank or wealth, no login details.
 
 The first time a character submits, the server issues a secret token. The plugin stores it in your RuneLite profile so nobody else can overwrite your character's data.
